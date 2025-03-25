@@ -6,6 +6,11 @@ class Token(core.Core):
         self,
         body: dict,
     ):
+        """
+        Obtener token.
+
+        https://docs.facturify.com/#tag/Token/operation/obtener-token
+        """
         return self.post(
             body,
             'auth',
@@ -15,6 +20,11 @@ class Token(core.Core):
     def validate_token(
         self,
     ):
+        """
+        Validar token.
+
+        https://docs.facturify.com/#tag/Token/operation/validar-token
+        """
         return self.get(
             'token',
             'validate',
@@ -23,6 +33,11 @@ class Token(core.Core):
     def refresh_token(
         self,
     ):
+        """
+        Refrescar token.
+
+        https://docs.facturify.com/#tag/Token/operation/refrescar-token
+        """
         return self.post(
             {},
             'token',
