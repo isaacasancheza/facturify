@@ -19,8 +19,8 @@ class NotFoundError(Exception):
 class UnauthorizerdError(Exception):
     def __init__(self, response: dict) -> None:
         super().__init__()
-        self.code = cast(int, response['code'])
-        self.message = cast(str, response['message'])
+        self.code = cast(int, response.get('code', ''))
+        self.message = cast(str, response.get('message', ''))
 
 
 class UnprocessableEntityError(Exception):
