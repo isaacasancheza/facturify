@@ -9,8 +9,6 @@ type Body = dict
 type Params = dict
 type Method = Literal['GET', 'PUT', 'POST', 'PATCH', 'DELETE']
 type Headers = dict
-type ApiVersion = Literal['v1']
-type ApiToken = str | Callable[[], str]
 
 SANDBOX_URL = 'https://api-sandbox.facturify.com/api'
 PRODUCTION_URL = 'https://api.facturify.com/api'
@@ -25,10 +23,10 @@ class OptionalArguments(TypedDict):
 class Core(ABC):
     def __init__(
         self,
-        api_token: ApiToken,
+        api_token: str | Callable[[], str],
         /,
         *,
-        version: ApiVersion = 'v1',
+        version: Literal['v1'] = 'v1',
         sandbox: bool = False,
         max_retries: int = 3,
         retriable_http_codes: set[int] = {401 | 429 | 500 | 502 | 503 | 504},
