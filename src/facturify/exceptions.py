@@ -1,9 +1,7 @@
-from dataclasses import dataclass
-from typing import cast
+from typing import TypedDict, cast
 
 
-@dataclass
-class Error:
+class Error(TypedDict):
     code: int
     field: str
     message: str
