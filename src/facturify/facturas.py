@@ -4,6 +4,8 @@ from facturify import core
 class Facturas(core.Core):
     def get_facturas(
         self,
+        /,
+        *,
         params: core.Params | None = None,
     ):
         """
@@ -19,6 +21,7 @@ class Facturas(core.Core):
     def get_factura(
         self,
         id: str,
+        /,
     ):
         """
         Recuperar factura PDF / XML.
@@ -33,6 +36,7 @@ class Facturas(core.Core):
     def create_factura(
         self,
         body: core.Body,
+        /,
     ):
         """
         Crear factura.
@@ -47,6 +51,7 @@ class Facturas(core.Core):
     def cancel_factura(
         self,
         id: str,
+        /,
     ):
         """
         Cancelar factura.
@@ -63,6 +68,7 @@ class Facturas(core.Core):
     def get_factura_pdf(
         self,
         id: str,
+        /,
     ):
         """
         Descargar PDF.
@@ -78,6 +84,7 @@ class Facturas(core.Core):
     def get_factura_xml(
         self,
         id: str,
+        /,
     ):
         """
         Descargar XML.
@@ -94,6 +101,7 @@ class Facturas(core.Core):
         self,
         id: str,
         body: dict,
+        /,
     ):
         """
         En este servicio sé podra hacer un reenvío de PDF y XML de la factura por correo electrónico.

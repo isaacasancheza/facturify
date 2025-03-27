@@ -4,6 +4,8 @@ from facturify import core
 class Clientes(core.Core):
     def get_clientes(
         self,
+        /,
+        *,
         params: core.Params | None = None,
     ):
         """
@@ -19,6 +21,7 @@ class Clientes(core.Core):
     def get_cliente(
         self,
         id: str,
+        /,
     ):
         """
         Obtener cliente.
@@ -33,6 +36,7 @@ class Clientes(core.Core):
     def create_cliente(
         self,
         body: dict,
+        /,
     ):
         """
         Crear cliente.
@@ -46,7 +50,9 @@ class Clientes(core.Core):
 
     def update_cliente(
         self,
+        id: str,
         body: dict,
+        /,
     ):
         """
         Actualizar cliente.
@@ -56,4 +62,5 @@ class Clientes(core.Core):
         return self.put(
             body,
             'cliente',
+            id,
         )

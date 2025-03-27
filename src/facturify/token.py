@@ -5,6 +5,7 @@ class Token(core.Core):
     def get_token(
         self,
         body: dict,
+        /,
     ):
         """
         Obtener token.
@@ -19,6 +20,7 @@ class Token(core.Core):
 
     def validate_token(
         self,
+        /,
     ):
         """
         Validar token.
@@ -32,6 +34,7 @@ class Token(core.Core):
 
     def refresh_token(
         self,
+        /,
     ):
         """
         Refrescar token.

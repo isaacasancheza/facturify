@@ -4,6 +4,8 @@ from facturify import core
 class Empresas(core.Core):
     def get_empresas(
         self,
+        /,
+        *,
         params: core.Params | None = None,
     ):
         """
@@ -19,6 +21,8 @@ class Empresas(core.Core):
     def get_empresa(
         self,
         id: str,
+        /,
+        *,
         params: core.Params | None = None,
     ):
         """
@@ -35,6 +39,7 @@ class Empresas(core.Core):
     def create_empresa(
         self,
         body: dict,
+        /,
     ):
         """
         Crear empresa.
@@ -50,6 +55,7 @@ class Empresas(core.Core):
         self,
         id: str,
         body: dict,
+        /,
     ):
         """
         Actualizar empresa.
