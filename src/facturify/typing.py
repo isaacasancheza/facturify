@@ -3,6 +3,10 @@ from typing import Literal, TypedDict
 from facturify import constants
 
 
+class WebhookEvent(TypedDict):
+    module: constants.WebhookModule
+
+
 class WebhookFacturaEventData(TypedDict):
     job_id: str
     xml: str
