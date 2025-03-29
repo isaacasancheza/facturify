@@ -5,9 +5,12 @@ from facturify import constants
 
 class WebhookEvent(TypedDict):
     module: constants.WebhookModule
+    action: str
+    status: str
+    data: dict
 
 
-class WebhookFacturaEventData(TypedDict):
+class WebhookEventFacturaData(TypedDict):
     job_id: str
     xml: str
     pdf: str
@@ -18,8 +21,8 @@ class WebhookFacturaEventData(TypedDict):
     factura: str
 
 
-class WebhookFacturaEvent(TypedDict):
+class WebhookEventFactura(TypedDict):
     module: Literal[constants.WebhookModule.INVOICE]
     action: constants.WebhookModuleFacturaAction
     status: constants.WebhookModuleFacturaStatus
-    data: WebhookFacturaEventData
+    data: WebhookEventFacturaData
