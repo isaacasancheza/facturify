@@ -125,17 +125,18 @@ class Core(ABC):
                     headers=headers,
                     ignore_auth=ignore_auth,
                 )
-            except requests.HTTPError as e:
+            except Exception as e:
                 exception = e
-                if e.response.status_code in self._retriable_http_codes:
+                if (
+                    isinstance(e, requests.HTTPError)
+                    and e.response.status_code in self._retriable_http_codes
+                ):
                     backoff = min(2**retries, 20)
                     sleep(backoff)
                     retries += 1
                     continue
                 raise
-        if exception:
-            raise exception
-        raise RuntimeError('This code should not be reached')
+        raise (exception if exception else RuntimeError('Exception should be thrown'))
 
     def request(
         self,
