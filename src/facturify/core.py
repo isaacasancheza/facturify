@@ -29,8 +29,9 @@ class Core(ABC):
         version: Literal['v1'] = 'v1',
         sandbox: bool = False,
         max_retries: int = 3,
-        retriable_http_codes: set[int] = {401 | 429 | 500 | 502 | 503 | 504},
+        retriable_http_codes: set[int] = {401, 429, 500, 502, 503, 504},
     ) -> None:
+        assert max_retries >= 0, 'max_retries must be greater than or equal to 0'
         self._api_root = (SANDBOX_URL if sandbox else PRODUCTION_URL) + f'/{version}/'
         self._api_token = api_token
         self._max_retries = max_retries
@@ -115,7 +116,7 @@ class Core(ABC):
     ) -> dict[str, Any]:
         retries = 0
         exception = None
-        while retries < self._max_retries:
+        while retries <= self._max_retries:
             try:
                 return self.request(
                     *args,
@@ -125,18 +126,19 @@ class Core(ABC):
                     headers=headers,
                     ignore_auth=ignore_auth,
                 )
-            except Exception as e:
+            except requests.HTTPError as e:
                 exception = e
-                if (
-                    isinstance(e, requests.HTTPError)
-                    and e.response.status_code in self._retriable_http_codes
-                ):
+                if e.response.status_code in self._retriable_http_codes:
                     backoff = min(2**retries, 20)
                     sleep(backoff)
                     retries += 1
                     continue
                 raise
-        raise (exception if exception else RuntimeError('Exception should be thrown'))
+        raise (
+            exception
+            if exception
+            else RuntimeError('An exception should have been thrown')
+        )
 
     def request(
         self,
