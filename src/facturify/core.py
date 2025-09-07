@@ -13,6 +13,9 @@ type Headers = dict
 SANDBOX_URL = 'https://api-sandbox.facturify.com/api'
 PRODUCTION_URL = 'https://api.facturify.com/api'
 
+DEFAULT_MAX_RETRIES = 3
+DEFAULT_RETRIABLE_HTTP_CODES = {401, 429, 500, 502, 503, 504}
+
 
 class OptionalArguments(TypedDict):
     params: NotRequired[Params | None]
@@ -28,14 +31,15 @@ class Core(ABC):
         *,
         version: Literal['v1'] = 'v1',
         sandbox: bool = False,
-        max_retries: int = 3,
-        retriable_http_codes: set[int] = {401, 429, 500, 502, 503, 504},
+        max_retries: int | None,
+        retriable_http_codes: set[int] | None,
     ) -> None:
-        assert max_retries >= 0, 'max_retries must be greater than or equal to 0'
         self._api_root = (SANDBOX_URL if sandbox else PRODUCTION_URL) + f'/{version}/'
         self._api_token = api_token
-        self._max_retries = max_retries
-        self._retriable_http_codes = retriable_http_codes
+        self._max_retries = max_retries or DEFAULT_MAX_RETRIES
+        self._retriable_http_codes = (
+            retriable_http_codes or DEFAULT_RETRIABLE_HTTP_CODES
+        )
 
     def get(
         self,

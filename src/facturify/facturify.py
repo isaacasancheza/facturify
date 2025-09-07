@@ -14,8 +14,8 @@ class Facturify:
         *,
         version: Literal['v1'] = 'v1',
         sandbox: bool = False,
-        max_retries: int = 3,
-        retriable_http_codes: set[int] = {401 | 429 | 500 | 502 | 503 | 504},
+        max_retries: int | None = None,
+        retriable_http_codes: set[int] | None = None,
     ) -> None:
         self.token = Token(
             api_token,
