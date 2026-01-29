@@ -31,14 +31,18 @@ class Core(ABC):
         *,
         version: Literal['v1'] = 'v1',
         sandbox: bool = False,
-        max_retries: int | None,
-        retriable_http_codes: set[int] | None,
+        max_retries: int | None = None,
+        retriable_http_codes: set[int] | None = None,
     ) -> None:
         self._api_root = (SANDBOX_URL if sandbox else PRODUCTION_URL) + f'/{version}/'
         self._api_token = api_token
-        self._max_retries = max_retries or DEFAULT_MAX_RETRIES
+        self._max_retries = (
+            max_retries if max_retries is not None else DEFAULT_MAX_RETRIES
+        )
         self._retriable_http_codes = (
-            retriable_http_codes or DEFAULT_RETRIABLE_HTTP_CODES
+            retriable_http_codes
+            if retriable_http_codes is not None
+            else DEFAULT_RETRIABLE_HTTP_CODES
         )
 
     def get(
