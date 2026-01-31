@@ -1,6 +1,6 @@
 from abc import ABC
 from time import sleep
-from typing import Any, Callable, Literal, NotRequired, TypedDict, Unpack
+from typing import Any, Literal, NotRequired, TypedDict, Unpack
 
 import requests
 
@@ -26,9 +26,8 @@ class OptionalArguments(TypedDict):
 class Core(ABC):
     def __init__(
         self,
-        api_token: str | Callable[[], str],
-        /,
         *,
+        api_token: str,
         version: Literal['v1'] = 'v1',
         sandbox: bool = False,
         max_retries: int | None = None,
@@ -160,12 +159,7 @@ class Core(ABC):
         if not ignore_auth:
             if not headers:
                 headers = {}
-            api_token = (
-                self._api_token
-                if isinstance(self._api_token, str)
-                else self._api_token()
-            )
-            headers['Authorization'] = f'Bearer {api_token}'
+            headers['Authorization'] = f'Bearer {self._api_token}'
 
         url = self._api_root + '/'.join(str(arg) for arg in args)
 

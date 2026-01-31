@@ -1,4 +1,4 @@
-from typing import Callable, Literal
+from typing import Literal
 
 from facturify.clientes import Clientes
 from facturify.empresas import Empresas
@@ -9,37 +9,36 @@ from facturify.token import Token
 class Facturify:
     def __init__(
         self,
-        api_token: str | Callable[[], str],
-        /,
         *,
+        api_token: str,
         version: Literal['v1'] = 'v1',
         sandbox: bool = False,
         max_retries: int | None = None,
         retriable_http_codes: set[int] | None = None,
     ) -> None:
         self.token = Token(
-            api_token,
+            api_token=api_token,
             version=version,
             sandbox=sandbox,
             max_retries=max_retries,
             retriable_http_codes=retriable_http_codes,
         )
         self.clientes = Clientes(
-            api_token,
+            api_token=api_token,
             version=version,
             sandbox=sandbox,
             max_retries=max_retries,
             retriable_http_codes=retriable_http_codes,
         )
         self.facturas = Facturas(
-            api_token,
+            api_token=api_token,
             version=version,
             sandbox=sandbox,
             max_retries=max_retries,
             retriable_http_codes=retriable_http_codes,
         )
         self.empresas = Empresas(
-            api_token,
+            api_token=api_token,
             version=version,
             sandbox=sandbox,
             max_retries=max_retries,

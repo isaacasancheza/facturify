@@ -1,6 +1,6 @@
 [project]
 name = "facturify"
-version = "0.4.4"
+version = "0.5.0"
 description = "Simple Facturify API Wrapper"
 authors = [
     { name = "Isaac Sánchez", email = "isaac@elrincondelsanchez.com" }
