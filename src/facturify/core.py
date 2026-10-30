@@ -23,7 +23,7 @@ class OptionalArguments(TypedDict):
     ignore_auth: NotRequired[bool | None]
 
 
-class Core(ABC):
+class Client:
     def __init__(
         self,
         *,
@@ -33,8 +33,8 @@ class Core(ABC):
         max_retries: int | None = None,
         retriable_http_codes: set[int] | None = None,
     ) -> None:
+        self.api_token = api_token
         self._api_root = (SANDBOX_URL if sandbox else PRODUCTION_URL) + f'/{version}/'
-        self._api_token = api_token
         self._max_retries = (
             max_retries if max_retries is not None else DEFAULT_MAX_RETRIES
         )
@@ -43,74 +43,7 @@ class Core(ABC):
             if retriable_http_codes is not None
             else DEFAULT_RETRIABLE_HTTP_CODES
         )
-
-    def get(
-        self,
-        /,
-        *args: URL,
-        **kwargs: Unpack[OptionalArguments],
-    ):
-        return self.wrapper(
-            *args,
-            **kwargs,
-            method='GET',
-        )
-
-    def put(
-        self,
-        body: Body,
-        /,
-        *args: URL,
-        **kwargs: Unpack[OptionalArguments],
-    ):
-        return self.wrapper(
-            *args,
-            **kwargs,
-            body=body,
-            method='PUT',
-        )
-
-    def post(
-        self,
-        body: Body,
-        /,
-        *args: URL,
-        **kwargs: Unpack[OptionalArguments],
-    ):
-        return self.wrapper(
-            *args,
-            **kwargs,
-            body=body,
-            method='POST',
-        )
-
-    def patch(
-        self,
-        body: Body,
-        /,
-        *args: URL,
-        **kwargs: Unpack[OptionalArguments],
-    ):
-        return self.wrapper(
-            *args,
-            **kwargs,
-            body=body,
-            method='PATCH',
-        )
-
-    def delete(
-        self,
-        /,
-        data: Body | None = None,
-        *args: URL,
-        **kwargs: Unpack[OptionalArguments],
-    ):
-        return self.wrapper(
-            *args,
-            **kwargs,
-            body=data,
-            method='DELETE',
-        )
+        self._session = requests.Session()
 
     def wrapper(
         self,
@@ -159,11 +92,11 @@ class Core(ABC):
         if not ignore_auth:
             if not headers:
                 headers = {}
-            headers['Authorization'] = f'Bearer {self._api_token}'
+            headers['Authorization'] = f'Bearer {self.api_token}'
 
         url = self._api_root + '/'.join(str(arg) for arg in args)
 
-        response = requests.request(
+        response = self._session.request(
             url=url,
             data=body,
             method=method,
@@ -174,3 +107,80 @@ class Core(ABC):
         response.raise_for_status()
 
         return response.json()
+
+
+class Core(ABC):
+    def __init__(
+        self,
+        client: Client,
+        /,
+    ) -> None:
+        self._client = client
+
+    def get(
+        self,
+        /,
+        *args: URL,
+        **kwargs: Unpack[OptionalArguments],
+    ):
+        return self._client.wrapper(
+            *args,
+            **kwargs,
+            method='GET',
+        )
+
+    def put(
+        self,
+        body: Body,
+        /,
+        *args: URL,
+        **kwargs: Unpack[OptionalArguments],
+    ):
+        return self._client.wrapper(
+            *args,
+            **kwargs,
+            body=body,
+            method='PUT',
+        )
+
+    def post(
+        self,
+        body: Body,
+        /,
+        *args: URL,
+        **kwargs: Unpack[OptionalArguments],
+    ):
+        return self._client.wrapper(
+            *args,
+            **kwargs,
+            body=body,
+            method='POST',
+        )
+
+    def patch(
+        self,
+        body: Body,
+        /,
+        *args: URL,
+        **kwargs: Unpack[OptionalArguments],
+    ):
+        return self._client.wrapper(
+            *args,
+            **kwargs,
+            body=body,
+            method='PATCH',
+        )
+
+    def delete(
+        self,
+        /,
+        data: Body | None = None,
+        *args: URL,
+        **kwargs: Unpack[OptionalArguments],
+    ):
+        return self._client.wrapper(
+            *args,
+            **kwargs,
+            body=data,
+            method='DELETE',
+        )

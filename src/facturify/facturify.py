@@ -1,6 +1,7 @@
 from typing import Literal
 
 from facturify.clientes import Clientes
+from facturify.core import Client
 from facturify.empresas import Empresas
 from facturify.facturas import Facturas
 from facturify.token import Token
@@ -16,31 +17,15 @@ class Facturify:
         max_retries: int | None = None,
         retriable_http_codes: set[int] | None = None,
     ) -> None:
-        self.token = Token(
+        self._client = Client(
             api_token=api_token,
             version=version,
             sandbox=sandbox,
             max_retries=max_retries,
             retriable_http_codes=retriable_http_codes,
         )
-        self.clientes = Clientes(
-            api_token=api_token,
-            version=version,
-            sandbox=sandbox,
-            max_retries=max_retries,
-            retriable_http_codes=retriable_http_codes,
-        )
-        self.facturas = Facturas(
-            api_token=api_token,
-            version=version,
-            sandbox=sandbox,
-            max_retries=max_retries,
-            retriable_http_codes=retriable_http_codes,
-        )
-        self.empresas = Empresas(
-            api_token=api_token,
-            version=version,
-            sandbox=sandbox,
-            max_retries=max_retries,
-            retriable_http_codes=retriable_http_codes,
-        )
+        self.token = Token(self._client)
+        self.clientes = Clientes(self._client)
+        self.facturas = Facturas(self._client)
+        self.empresas = Empresas(self._client)
+
