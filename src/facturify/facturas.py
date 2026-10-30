@@ -7,7 +7,7 @@ class Facturas(core.Core):
         /,
         *,
         params: core.Params | None = None,
-    ):
+    ) -> core.Response:
         """
         Listar facturas.
 
@@ -22,7 +22,7 @@ class Facturas(core.Core):
         self,
         id: str,
         /,
-    ):
+    ) -> core.Response:
         """
         Recuperar factura PDF / XML.
 
@@ -37,7 +37,7 @@ class Facturas(core.Core):
         self,
         body: core.Body,
         /,
-    ):
+    ) -> core.Response:
         """
         Crear factura.
 
@@ -52,7 +52,7 @@ class Facturas(core.Core):
         self,
         id: str,
         /,
-    ):
+    ) -> core.Response:
         """
         Cancelar factura.
 
@@ -69,7 +69,7 @@ class Facturas(core.Core):
         self,
         id: str,
         /,
-    ):
+    ) -> core.Response:
         """
         Descargar PDF.
 
@@ -85,7 +85,7 @@ class Facturas(core.Core):
         self,
         id: str,
         /,
-    ):
+    ) -> core.Response:
         """
         Descargar XML.
 
@@ -100,9 +100,9 @@ class Facturas(core.Core):
     def resend_factura(
         self,
         id: str,
-        body: dict,
+        body: core.Body,
         /,
-    ):
+    ) -> core.Response:
         """
         En este servicio sé podra hacer un reenvío de PDF y XML de la factura por correo electrónico.
 

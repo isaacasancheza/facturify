@@ -5,10 +5,11 @@ from typing import Any, Literal, NotRequired, TypedDict, Unpack
 import requests
 
 type URL = str | int
-type Body = dict
-type Params = dict
+type Body = dict[str, Any]
+type Params = dict[str, Any]
 type Method = Literal['GET', 'PUT', 'POST', 'PATCH', 'DELETE']
-type Headers = dict
+type Headers = dict[str, str]
+type Response = dict[str, Any]
 
 SANDBOX_URL = 'https://api-sandbox.facturify.com/api'
 PRODUCTION_URL = 'https://api.facturify.com/api'
@@ -26,7 +27,7 @@ TOO_MANY_REQUESTS = 429
 class OptionalArguments(TypedDict):
     params: NotRequired[Params | None]
     headers: NotRequired[Headers | None]
-    ignore_auth: NotRequired[bool | None]
+    ignore_auth: NotRequired[bool]
 
 
 class Client:
@@ -70,8 +71,8 @@ class Client:
         params: Params | None = None,
         method: Method,
         headers: Headers | None = None,
-        ignore_auth: bool | None = False,
-    ) -> dict[str, Any]:
+        ignore_auth: bool = False,
+    ) -> Response:
         retries = 0
         exception = None
         while retries <= self._max_retries:
@@ -108,8 +109,8 @@ class Client:
         params: Params | None = None,
         method: Method,
         headers: Headers | None = None,
-        ignore_auth: bool | None = False,
-    ) -> dict[str, Any]:
+        ignore_auth: bool = False,
+    ) -> Response:
         headers = {**(headers or {})}
         if not ignore_auth:
             headers['Authorization'] = f'Bearer {self.api_token}'
@@ -127,7 +128,8 @@ class Client:
 
         response.raise_for_status()
 
-        return response.json()
+        data: Response = response.json()
+        return data
 
 
 class Core(ABC):
@@ -143,7 +145,7 @@ class Core(ABC):
         /,
         *args: URL,
         **kwargs: Unpack[OptionalArguments],
-    ):
+    ) -> Response:
         return self._client.wrapper(
             *args,
             **kwargs,
@@ -156,7 +158,7 @@ class Core(ABC):
         /,
         *args: URL,
         **kwargs: Unpack[OptionalArguments],
-    ):
+    ) -> Response:
         return self._client.wrapper(
             *args,
             **kwargs,
@@ -170,7 +172,7 @@ class Core(ABC):
         /,
         *args: URL,
         **kwargs: Unpack[OptionalArguments],
-    ):
+    ) -> Response:
         return self._client.wrapper(
             *args,
             **kwargs,
@@ -184,7 +186,7 @@ class Core(ABC):
         /,
         *args: URL,
         **kwargs: Unpack[OptionalArguments],
-    ):
+    ) -> Response:
         return self._client.wrapper(
             *args,
             **kwargs,
@@ -198,7 +200,7 @@ class Core(ABC):
         *args: URL,
         body: Body | None = None,
         **kwargs: Unpack[OptionalArguments],
-    ):
+    ) -> Response:
         return self._client.wrapper(
             *args,
             **kwargs,
