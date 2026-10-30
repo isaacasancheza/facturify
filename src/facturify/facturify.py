@@ -29,3 +29,20 @@ class Facturify:
         self.facturas = Facturas(self._client)
         self.empresas = Empresas(self._client)
 
+    @property
+    def api_token(
+        self,
+        /,
+    ) -> str:
+        return self._client.api_token
+
+    @api_token.setter
+    def api_token(
+        self,
+        api_token: str,
+        /,
+    ) -> None:
+        """
+        Reemplaza el token usado por todos los recursos, p. ej. tras `token.refresh_token()`.
+        """
+        self._client.api_token = api_token
