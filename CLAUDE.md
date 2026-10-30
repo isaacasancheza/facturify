@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Thin Python wrapper around the [Facturify](https://docs.facturify.com) REST API (Mexican CFDI invoicing). Python ≥3.13, managed with `uv`, built with hatchling. Only runtime dependency is `requests`.
+Thin Python wrapper around the [Facturify](https://docs.facturify.com) REST API (Mexican CFDI invoicing). Python ≥3.13, managed with `uv`, built with hatchling. Only runtime dependency is `requests`. The API's OpenAPI spec is at https://docs.facturify.com/es/compiled.yaml (the docs page itself is a JS-rendered ReDoc shell).
 
 ## Commands
 
@@ -12,23 +12,23 @@ Thin Python wrapper around the [Facturify](https://docs.facturify.com) REST API 
 uv sync                                   # install deps (incl. dev group)
 uv run --no-sync ruff format src tests    # format
 uv run --no-sync ruff check src tests     # lint
-uv run --no-sync mypy src                 # type check
+uv run --no-sync mypy                     # type check (strict, src + tests)
 uv run --no-sync pytest                   # run tests
-uv run --no-sync pytest tests/test_token.py::test_get_token   # single test
+uv run --no-sync pytest tests/test_core.py::test_sends_body_as_json   # single test
 ```
 
-There is no ruff config in `pyproject.toml`; formatting (single quotes) comes from the user-level `~/.config/ruff/ruff.toml`.
+Ruff and mypy are configured in `pyproject.toml`. The project ruff config replaces any user-level one, so it carries the single-quote style and the `__init__.py` F401 ignore itself.
 
-Tests hit the real Facturify **sandbox** API and require `API_KEY` and `API_SECRET` environment variables.
+`tests/test_core.py` contains unit tests that swap the client's `requests.Session` for a fake and stub out `core.sleep`. `tests/test_token.py` hits the real sandbox API and is skipped unless `API_KEY` and `API_SECRET` are set.
 
 ## Architecture
 
-- `core.Core` (`src/facturify/core.py`) is the base for every resource class. It holds the base URL (sandbox vs production, plus API `version`), the bearer token, and retry settings. All HTTP goes through `get`/`post`/`put`/`patch`/`delete` → `wrapper` (retry loop with exponential backoff, capped at 20s, on `retriable_http_codes`; default includes 401/429/5xx) → `request` (builds the URL by joining positional path segments with `/`, adds the `Authorization: Bearer` header unless `ignore_auth=True`, calls `raise_for_status()`, returns `response.json()`).
-- Resource classes (`Token`, `Clientes`, `Empresas`, `Facturas`) each subclass `Core` and expose one method per endpoint. Methods pass path segments positionally (e.g. `self.put(body, 'factura', id, 'cancel')`), take the body as the first positional arg for write verbs, and carry a Spanish docstring linking to the matching docs.facturify.com operation. Follow this pattern when adding endpoints.
-- `Facturify` (`src/facturify/facturify.py`) is the public entry point (re-exported from `__init__.py`). It instantiates each resource class with the same constructor kwargs and exposes them as attributes (`facturify.facturas`, `facturify.clientes`, …). A new constructor option must be added to both `Core.__init__` and `Facturify.__init__` and forwarded to every resource; a new resource class must be wired in here.
+- `core.Client` (`src/facturify/core.py`) holds all shared state: base URL (sandbox vs production plus API `version`), the bearer token (`api_token`, mutable), retry settings, timeout and one `requests.Session`. All HTTP goes through `Client.wrapper` (retry loop with exponential backoff capped at 20s) → `Client.request` (joins positional path segments with `/`, adds `Authorization: Bearer` unless `ignore_auth=True`, sends the body as JSON, `raise_for_status()`, returns `response.json()`).
+- Retry rule: GET is retried on any code in `retriable_http_codes`; other methods only on 429, because a failed write may already have been processed (e.g. a stamped CFDI). 401 is not retried by default.
+- `core.Core` is the base for resource classes (`Token`, `Clientes`, `Empresas`, `Facturas`). It takes the shared `Client` and exposes `get`/`post`/`put`/`patch`/`delete`. Write verbs take the body as the first positional argument, except `delete`, which takes it as `body=`. Each resource method passes path segments positionally (e.g. `self.put(body, 'factura', id, 'cancel')`), returns `core.Response`, and has a Spanish docstring linking to the matching docs.facturify.com operation. Follow this pattern when adding endpoints.
+- `Facturify` (`src/facturify/facturify.py`) is the public entry point (re-exported from `__init__.py`). It builds one `Client`, passes it to every resource (`facturify.facturas`, `facturify.clientes`, …), and exposes an `api_token` property for swapping the token after `token.refresh_token()`. A new constructor option must be added to both `Facturify.__init__` and `Client.__init__`; a new resource class must be wired in here.
 - `constants.py` (StrEnums) and `typing.py` (TypedDicts) describe incoming webhook event payloads; they are not used by the HTTP client itself.
-
-Request bodies and params are plain `dict`s (no models/dataclasses). Note that `request` sends the body via `data=` (form-encoded), not `json=`.
+- The package ships `py.typed`. Request bodies, params and responses are plain `dict`s (no models/dataclasses).
 
 ## Conventions
 
