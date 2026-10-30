@@ -14,7 +14,13 @@ SANDBOX_URL = 'https://api-sandbox.facturify.com/api'
 PRODUCTION_URL = 'https://api.facturify.com/api'
 
 DEFAULT_MAX_RETRIES = 3
-DEFAULT_RETRIABLE_HTTP_CODES = {401, 429, 500, 502, 503, 504}
+DEFAULT_RETRIABLE_HTTP_CODES = {429, 500, 502, 503, 504}
+DEFAULT_TIMEOUT = 30.0
+
+# A failed write may still have been processed (e.g. a stamped CFDI), so only
+# these methods are retried on every retriable code; others only on 429.
+IDEMPOTENT_METHODS = {'GET'}
+TOO_MANY_REQUESTS = 429
 
 
 class OptionalArguments(TypedDict):
@@ -32,6 +38,7 @@ class Client:
         sandbox: bool = False,
         max_retries: int | None = None,
         retriable_http_codes: set[int] | None = None,
+        timeout: float | None = None,
     ) -> None:
         self.api_token = api_token
         self._api_root = (SANDBOX_URL if sandbox else PRODUCTION_URL) + f'/{version}/'
@@ -43,7 +50,18 @@ class Client:
             if retriable_http_codes is not None
             else DEFAULT_RETRIABLE_HTTP_CODES
         )
+        self._timeout = timeout if timeout is not None else DEFAULT_TIMEOUT
         self._session = requests.Session()
+
+    def _is_retriable(
+        self,
+        *,
+        method: Method,
+        status_code: int,
+    ) -> bool:
+        if status_code not in self._retriable_http_codes:
+            return False
+        return method in IDEMPOTENT_METHODS or status_code == TOO_MANY_REQUESTS
 
     def wrapper(
         self,
@@ -68,7 +86,10 @@ class Client:
                 )
             except requests.HTTPError as e:
                 exception = e
-                if e.response.status_code in self._retriable_http_codes:
+                if self._is_retriable(
+                    method=method,
+                    status_code=e.response.status_code,
+                ):
                     backoff = min(2**retries, 20)
                     sleep(backoff)
                     retries += 1
@@ -89,19 +110,19 @@ class Client:
         headers: Headers | None = None,
         ignore_auth: bool | None = False,
     ) -> dict[str, Any]:
+        headers = {**(headers or {})}
         if not ignore_auth:
-            if not headers:
-                headers = {}
             headers['Authorization'] = f'Bearer {self.api_token}'
 
         url = self._api_root + '/'.join(str(arg) for arg in args)
 
         response = self._session.request(
             url=url,
-            data=body,
+            json=body,
             method=method,
             params=params,
             headers=headers,
+            timeout=self._timeout,
         )
 
         response.raise_for_status()
@@ -174,13 +195,13 @@ class Core(ABC):
     def delete(
         self,
         /,
-        data: Body | None = None,
         *args: URL,
+        body: Body | None = None,
         **kwargs: Unpack[OptionalArguments],
     ):
         return self._client.wrapper(
             *args,
             **kwargs,
-            body=data,
+            body=body,
             method='DELETE',
         )

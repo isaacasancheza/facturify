@@ -16,6 +16,7 @@ class Facturify:
         sandbox: bool = False,
         max_retries: int | None = None,
         retriable_http_codes: set[int] | None = None,
+        timeout: float | None = None,
     ) -> None:
         self._client = Client(
             api_token=api_token,
@@ -23,6 +24,7 @@ class Facturify:
             sandbox=sandbox,
             max_retries=max_retries,
             retriable_http_codes=retriable_http_codes,
+            timeout=timeout,
         )
         self.token = Token(self._client)
         self.clientes = Clientes(self._client)
