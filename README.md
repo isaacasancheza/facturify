@@ -47,6 +47,12 @@ GET requests are retried on any retriable code. Writes (POST, PUT, PATCH, DELETE
 
 HTTP errors are raised as `requests.HTTPError`.
 
+### Cancellation
+
+`facturas.cancel_factura(uuid)` sends no cancellation reason (SAT `motivo`). Facturify's spec documents no body for this endpoint, and the sandbox accepts the request, apparently defaulting to `02` (comprobante emitido con errores sin relación).
+
+Canceling with `01` (comprobante emitido con errores con relación), which requires the UUID of the replacement CFDI, is not documented, so the library does not support it. Ask Facturify support before relying on it.
+
 ### Webhooks
 
 `facturify.typing` and `facturify.constants` provide `TypedDict`s and enums for webhook payloads, e.g. `WebhookEventFactura`.
