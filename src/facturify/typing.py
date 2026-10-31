@@ -1,4 +1,4 @@
-from typing import Literal, TypedDict
+from typing import Any, Literal, TypedDict
 
 from facturify import constants
 
@@ -7,7 +7,7 @@ class WebhookEvent(TypedDict):
     module: constants.WebhookModule
     action: str
     status: str
-    data: dict
+    data: dict[str, Any]
 
 
 class WebhookEventFacturaData(TypedDict):

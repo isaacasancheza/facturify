@@ -7,7 +7,7 @@ class Clientes(core.Core):
         /,
         *,
         params: core.Params | None = None,
-    ):
+    ) -> core.Response:
         """
         Listar clientes.
 
@@ -22,7 +22,7 @@ class Clientes(core.Core):
         self,
         id: str,
         /,
-    ):
+    ) -> core.Response:
         """
         Obtener cliente.
 
@@ -35,9 +35,9 @@ class Clientes(core.Core):
 
     def create_cliente(
         self,
-        body: dict,
+        body: core.Body,
         /,
-    ):
+    ) -> core.Response:
         """
         Crear cliente.
 
@@ -51,9 +51,9 @@ class Clientes(core.Core):
     def update_cliente(
         self,
         id: str,
-        body: dict,
+        body: core.Body,
         /,
-    ):
+    ) -> core.Response:
         """
         Actualizar cliente.
 

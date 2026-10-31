@@ -4,9 +4,9 @@ from facturify import core
 class Token(core.Core):
     def get_token(
         self,
-        body: dict,
+        body: core.Body,
         /,
-    ):
+    ) -> core.Response:
         """
         Obtener token.
 
@@ -21,7 +21,7 @@ class Token(core.Core):
     def validate_token(
         self,
         /,
-    ):
+    ) -> core.Response:
         """
         Validar token.
 
@@ -35,7 +35,7 @@ class Token(core.Core):
     def refresh_token(
         self,
         /,
-    ):
+    ) -> core.Response:
         """
         Refrescar token.
 

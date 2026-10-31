@@ -7,7 +7,7 @@ class Empresas(core.Core):
         /,
         *,
         params: core.Params | None = None,
-    ):
+    ) -> core.Response:
         """
         Listar empresas.
 
@@ -24,7 +24,7 @@ class Empresas(core.Core):
         /,
         *,
         params: core.Params | None = None,
-    ):
+    ) -> core.Response:
         """
         Obtener empresa.
 
@@ -38,9 +38,9 @@ class Empresas(core.Core):
 
     def create_empresa(
         self,
-        body: dict,
+        body: core.Body,
         /,
-    ):
+    ) -> core.Response:
         """
         Crear empresa.
 
@@ -54,9 +54,9 @@ class Empresas(core.Core):
     def update_empresa(
         self,
         id: str,
-        body: dict,
+        body: core.Body,
         /,
-    ):
+    ) -> core.Response:
         """
         Actualizar empresa.
 

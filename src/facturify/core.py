@@ -5,25 +5,32 @@ from typing import Any, Literal, NotRequired, TypedDict, Unpack
 import requests
 
 type URL = str | int
-type Body = dict
-type Params = dict
+type Body = dict[str, Any]
+type Params = dict[str, Any]
 type Method = Literal['GET', 'PUT', 'POST', 'PATCH', 'DELETE']
-type Headers = dict
+type Headers = dict[str, str]
+type Response = dict[str, Any]
 
 SANDBOX_URL = 'https://api-sandbox.facturify.com/api'
 PRODUCTION_URL = 'https://api.facturify.com/api'
 
 DEFAULT_MAX_RETRIES = 3
-DEFAULT_RETRIABLE_HTTP_CODES = {401, 429, 500, 502, 503, 504}
+DEFAULT_RETRIABLE_HTTP_CODES = {429, 500, 502, 503, 504}
+DEFAULT_TIMEOUT = 30.0
+
+# A failed write may still have been processed (e.g. a stamped CFDI), so only
+# these methods are retried on every retriable code; others only on 429.
+IDEMPOTENT_METHODS = {'GET'}
+TOO_MANY_REQUESTS = 429
 
 
 class OptionalArguments(TypedDict):
     params: NotRequired[Params | None]
     headers: NotRequired[Headers | None]
-    ignore_auth: NotRequired[bool | None]
+    ignore_auth: NotRequired[bool]
 
 
-class Core(ABC):
+class Client:
     def __init__(
         self,
         *,
@@ -32,9 +39,10 @@ class Core(ABC):
         sandbox: bool = False,
         max_retries: int | None = None,
         retriable_http_codes: set[int] | None = None,
+        timeout: float | None = None,
     ) -> None:
+        self.api_token = api_token
         self._api_root = (SANDBOX_URL if sandbox else PRODUCTION_URL) + f'/{version}/'
-        self._api_token = api_token
         self._max_retries = (
             max_retries if max_retries is not None else DEFAULT_MAX_RETRIES
         )
@@ -43,74 +51,18 @@ class Core(ABC):
             if retriable_http_codes is not None
             else DEFAULT_RETRIABLE_HTTP_CODES
         )
+        self._timeout = timeout if timeout is not None else DEFAULT_TIMEOUT
+        self._session = requests.Session()
 
-    def get(
+    def _is_retriable(
         self,
-        /,
-        *args: URL,
-        **kwargs: Unpack[OptionalArguments],
-    ):
-        return self.wrapper(
-            *args,
-            **kwargs,
-            method='GET',
-        )
-
-    def put(
-        self,
-        body: Body,
-        /,
-        *args: URL,
-        **kwargs: Unpack[OptionalArguments],
-    ):
-        return self.wrapper(
-            *args,
-            **kwargs,
-            body=body,
-            method='PUT',
-        )
-
-    def post(
-        self,
-        body: Body,
-        /,
-        *args: URL,
-        **kwargs: Unpack[OptionalArguments],
-    ):
-        return self.wrapper(
-            *args,
-            **kwargs,
-            body=body,
-            method='POST',
-        )
-
-    def patch(
-        self,
-        body: Body,
-        /,
-        *args: URL,
-        **kwargs: Unpack[OptionalArguments],
-    ):
-        return self.wrapper(
-            *args,
-            **kwargs,
-            body=body,
-            method='PATCH',
-        )
-
-    def delete(
-        self,
-        /,
-        data: Body | None = None,
-        *args: URL,
-        **kwargs: Unpack[OptionalArguments],
-    ):
-        return self.wrapper(
-            *args,
-            **kwargs,
-            body=data,
-            method='DELETE',
-        )
+        *,
+        method: Method,
+        status_code: int,
+    ) -> bool:
+        if status_code not in self._retriable_http_codes:
+            return False
+        return method in IDEMPOTENT_METHODS or status_code == TOO_MANY_REQUESTS
 
     def wrapper(
         self,
@@ -119,8 +71,8 @@ class Core(ABC):
         params: Params | None = None,
         method: Method,
         headers: Headers | None = None,
-        ignore_auth: bool | None = False,
-    ) -> dict[str, Any]:
+        ignore_auth: bool = False,
+    ) -> Response:
         retries = 0
         exception = None
         while retries <= self._max_retries:
@@ -135,7 +87,10 @@ class Core(ABC):
                 )
             except requests.HTTPError as e:
                 exception = e
-                if e.response.status_code in self._retriable_http_codes:
+                if self._is_retriable(
+                    method=method,
+                    status_code=e.response.status_code,
+                ):
                     backoff = min(2**retries, 20)
                     sleep(backoff)
                     retries += 1
@@ -154,23 +109,101 @@ class Core(ABC):
         params: Params | None = None,
         method: Method,
         headers: Headers | None = None,
-        ignore_auth: bool | None = False,
-    ) -> dict[str, Any]:
+        ignore_auth: bool = False,
+    ) -> Response:
+        headers = {**(headers or {})}
         if not ignore_auth:
-            if not headers:
-                headers = {}
-            headers['Authorization'] = f'Bearer {self._api_token}'
+            headers['Authorization'] = f'Bearer {self.api_token}'
 
         url = self._api_root + '/'.join(str(arg) for arg in args)
 
-        response = requests.request(
+        response = self._session.request(
             url=url,
-            data=body,
+            json=body,
             method=method,
             params=params,
             headers=headers,
+            timeout=self._timeout,
         )
 
         response.raise_for_status()
 
-        return response.json()
+        data: Response = response.json()
+        return data
+
+
+class Core(ABC):
+    def __init__(
+        self,
+        client: Client,
+        /,
+    ) -> None:
+        self._client = client
+
+    def get(
+        self,
+        /,
+        *args: URL,
+        **kwargs: Unpack[OptionalArguments],
+    ) -> Response:
+        return self._client.wrapper(
+            *args,
+            **kwargs,
+            method='GET',
+        )
+
+    def put(
+        self,
+        body: Body,
+        /,
+        *args: URL,
+        **kwargs: Unpack[OptionalArguments],
+    ) -> Response:
+        return self._client.wrapper(
+            *args,
+            **kwargs,
+            body=body,
+            method='PUT',
+        )
+
+    def post(
+        self,
+        body: Body,
+        /,
+        *args: URL,
+        **kwargs: Unpack[OptionalArguments],
+    ) -> Response:
+        return self._client.wrapper(
+            *args,
+            **kwargs,
+            body=body,
+            method='POST',
+        )
+
+    def patch(
+        self,
+        body: Body,
+        /,
+        *args: URL,
+        **kwargs: Unpack[OptionalArguments],
+    ) -> Response:
+        return self._client.wrapper(
+            *args,
+            **kwargs,
+            body=body,
+            method='PATCH',
+        )
+
+    def delete(
+        self,
+        /,
+        *args: URL,
+        body: Body | None = None,
+        **kwargs: Unpack[OptionalArguments],
+    ) -> Response:
+        return self._client.wrapper(
+            *args,
+            **kwargs,
+            body=body,
+            method='DELETE',
+        )
