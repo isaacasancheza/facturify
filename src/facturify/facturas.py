@@ -108,9 +108,9 @@ class Facturas(core.Core):
 
         https://docs.facturify.com/#tag/Facturacion/operation/factura-reenviar-pdf-xml
         """
-        return self.put(
+        return self.post(
             body,
             'factura',
             id,
-            'send-email',
+            'send-mail',
         )

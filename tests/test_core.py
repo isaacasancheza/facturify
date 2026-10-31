@@ -245,3 +245,20 @@ def test_delete_takes_path_positionally_and_body_by_keyword(
     assert call['json'] == {
         'motivo': '02',
     }
+
+
+def test_resend_factura_posts_to_send_mail(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    facturify, session = make_facturify(monkeypatch, 200)
+
+    facturify.facturas.resend_factura(
+        'abc',
+        {
+            'emails_send': 'test@example.com',
+        },
+    )
+
+    [call] = session.calls
+    assert call['method'] == 'POST'
+    assert call['url'] == f'{core.SANDBOX_URL}/v1/factura/abc/send-mail'
