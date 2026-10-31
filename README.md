@@ -53,6 +53,8 @@ HTTP errors are raised as `requests.HTTPError`.
 
 Canceling with `01` (comprobante emitido con errores con relación), which requires the UUID of the replacement CFDI, is not documented, so the library does not support it. Ask Facturify support before relying on it.
 
+A CFDI cannot be cancelled right after it is stamped. Until SAT registers it, which can take several minutes, cancelling fails with a 400 `SAT: UUID No existe`. Do not retry this in a tight loop: after too many attempts SAT locks that CFDI out with `Alcanzo máximo de solicitudes para cancelación, contactar a soporte`, and only Facturify support can clear it. Space retries out, or queue the cancellation and try again later. The library does not retry it for you, because writes are only retried on 429.
+
 ### Webhooks
 
 `facturify.typing` and `facturify.constants` provide `TypedDict`s and enums for webhook payloads, e.g. `WebhookEventFactura`.
