@@ -21,7 +21,7 @@ Ruff and mypy are configured in `pyproject.toml`. The project ruff config replac
 
 `tests/test_core.py` contains unit tests that swap the client's `requests.Session` for a fake and stub out `core.sleep`. The other test modules hit the real sandbox through the `facturify` fixture in `tests/conftest.py`, which skips unless `API_KEY` and `API_SECRET` are set (sandbox values live in SSM at `/facturify/sandbox/api-key` and `/facturify/sandbox/api-secret`). `tests/test_writes.py` also needs `FACTURIFY_SANDBOX_WRITES=1`, since it stamps and cancels a real sandbox CFDI.
 
-Sandbox quirks the tests work around: listing facturas requires `page`, `limit`, `from` and `to`; the SAT test receptor RFCs are rejected at stamping (`CFDI40147`), so facturas go to `XAXX010101000` with `InformacionGlobal`; a just-stamped CFDI returns 400 on cancel for a few seconds; `get_factura` returns 500 for those facturas; identical concurrent requests get `409 Solicitud duplicada en proceso`.
+Sandbox quirks the tests work around: listing facturas requires `page`, `limit`, `from` and `to`; the SAT test receptor RFCs are rejected at stamping (`CFDI40147`), so facturas go to `XAXX010101000` with `InformacionGlobal`; cancelling a just-stamped CFDI returns 400 `SAT: UUID No existe` until SAT registers it (seconds to minutes), and too many cancel attempts lock that CFDI out with `Alcanzo máximo de solicitudes para cancelación`, so retry sparingly; payment complements (`tipo: 'pago'`) are created with `create_factura` and go to the same generic receptor, with Facturify stamping `Moneda` as `XXX`; `get_factura` returns 500 for those facturas; identical concurrent requests get `409 Solicitud duplicada en proceso`.
 
 ## Architecture
 
