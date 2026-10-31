@@ -1,28 +1,9 @@
 from datetime import date, timedelta
-from os import environ
 from typing import Any
 
 import pytest
 
 from facturify import Facturify
-
-pytestmark = pytest.mark.skipif(
-    'API_KEY' not in environ or 'API_SECRET' not in environ,
-    reason='requires API_KEY and API_SECRET for the Facturify sandbox',
-)
-
-
-@pytest.fixture(scope='module')
-def facturify() -> Facturify:
-    facturify = Facturify(api_token='', sandbox=True)
-    response = facturify.token.get_token(
-        {
-            'api_key': environ['API_KEY'],
-            'api_secret': environ['API_SECRET'],
-        },
-    )
-    facturify.api_token = response['jwt']['token']
-    return facturify
 
 
 def test_get_token(
