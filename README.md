@@ -60,4 +60,4 @@ uv run mypy
 uv run pytest
 ```
 
-`tests/test_token.py` calls the sandbox API and is skipped unless `API_KEY` and `API_SECRET` are set.
+Sandbox tests are skipped unless `API_KEY` and `API_SECRET` are set. Tests that create clientes and stamp and cancel a CFDI also need `FACTURIFY_SANDBOX_WRITES=1`.
